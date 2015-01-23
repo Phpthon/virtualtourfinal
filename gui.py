@@ -201,4 +201,3 @@ class Title(Component):
 
 			return True
 		return False
-	
