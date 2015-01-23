@@ -157,26 +157,3 @@ class CheckBox(Component):
 			self.parent.blit(self, self.rect)
 			return True
 		return False
-	
-class Title(Component):
-
-	sprites = pygame.image.load("assets/img/title_sprites.png")
-
-	def __init__(self, title, parent, sprite, **kwargs):
-		Component.__init__(self, (210, 38), parent, **kwargs)
-		self.sprite = Title.sprites.subsurface((0, sprite * 16, 16, 16))
-		self.font = pygame.fonta.Font(FONT_REGULAR, 12).render(title, True, (0, 0, 0))
-		self.init = False
-
-	def update(self, timer, events):
-		if not self.init:
-			self.init = True
-			self.fill(self.parent.background)
-			self.blit(self.sprite, (10, 10))
-			self.blit(self.font, (40, 13))
-			pygame.draw.line(self, (212, 212, 212), (0, self.rect.height-1), (self.rect.width, self.rect.height-1))
-			self.parent.blit(self, self.rect)
-
-			return True
-		return False
-
