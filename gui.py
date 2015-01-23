@@ -101,3 +101,59 @@ class Button(Component):
 			self.parent.blit(self, self.rect)
 			return True
 		return False
+
+class CheckBox(Component):
+
+	sprites = pygame.image.load("assets/img/checkbox_sprites.png")
+
+	def __init__(self, name, parent, **kwargs):
+		Component.__init__(self, (210, 16), parent, **kwargs)
+
+		self.clicked = False
+		self.hovered = False
+		self.init = False
+		self.checked = False
+
+		self.counter = 0
+		self.font = pygame.font.Font(FONT_REGULAR, 12).render(name, True, (92, 92, 92))
+		self.bg = CheckBox.sprites.subsurface((0, 0, 16, 16))
+		self.bg_hover = CheckBox.sprites.subsurface((0, 16, 16, 16))
+		self.tick = CheckBox.sprites.subsurface((0, 32, 16, 14))
+
+	def update(self, timer, events):
+		update = False
+		for event in events:
+			if event.type == pygame.MOUSEMOTION:
+				if self.event_rect.collidepoint(event.pos):
+					update = True
+					self.hovered = True
+				else:
+					if self.hovered:
+						update = True
+					self.hovered = False
+			if event.type == pygame.MOUSEBUTTONDOWN:
+				if self.event_rect.collidepoint(event.pos):
+					if self.checked:
+						self.checked = False
+						EventDispatcher().send_event(CheckBoxEvent(self.name, self.checked))
+					else:
+						self.checked = True
+						EventDispatcher().send_event(CheckBoxEvent(self.name, self.checked))
+					update = True
+
+		if update or not self.init:
+			self.init = True
+			#self.fill(self.parent.background)
+			
+			self.blit(self.parent.initial_image.subsurface(self.rect), (0,0))
+			if self.hovered:
+				self.blit(self.bg_hover, (0, 0))
+			else:
+				self.blit(self.bg, (0, 0))
+			if self.checked:
+				self.blit(self.tick, (2,0))
+			self.blit(self.font, (26, 3))
+
+			self.parent.blit(self, self.rect)
+			return True
+		return False
