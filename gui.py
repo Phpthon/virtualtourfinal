@@ -355,3 +355,45 @@ class Slider(Component):
 
 	def myround(self, x, base=5):
 		return int(base * math.ceil(float(x)/base))
+
+class FlashingLabel(Component, IEventHandler):
+
+	def __init__(self, title, parent, **kwargs):
+		Component.__init__(self, (210, 16), parent, **kwargs)
+		IEventHandler.__init__(self)
+		self.font = pygame.font.Font(FONT_REGULAR, 12)
+		self.title = self.font.render(title, True, (92, 92, 92))
+		self.init = False
+
+		self.amount = 510
+		self.direction = -1
+		self.current = random.randint(0, 255)
+
+	def update(self, timer, events):
+
+		self.current += timer * self.direction * self.amount
+
+		if self.current > 255:
+			self.direction = -1
+			self.current = 255
+		elif self.current < 0:
+			self.direction = 1
+			self.current = 0
+
+		if not self.init:
+			self.init = True
+			self.blit(self.parent.initial_image.subsurface(self.rect), (0,0))
+			#self.blit(self.sprite, (10, 10))
+			self.blit(self.title, (0, 0))
+			#self.parent.blit(self, self.rect)
+
+			return True
+
+		self.set_alpha(math.ceil(self.current))
+		return True
+
+	def event_handler(self, event):
+		if event.istype(LabelChange) and event.name is self.name:
+			self.value = self.font.render(event.string, True, (228, 174, 46))
+			self.init = False
+
