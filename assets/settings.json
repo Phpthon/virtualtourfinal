@@ -1,0 +1,83 @@
+{
+	"title": "Python Virtual Robot",
+	"map_img": "assets/img/map.png",
+	"treasure_img": "assets/img/treasure.png",
+	"version": "v1.0329",
+	"landmarks":[
+		{
+			"name": "Northern Ireland",
+			"coords": [118, 366],
+			"dimensions": [120, 109]
+		},
+		{
+			"name": "Republic of Ireland",
+			"coords": [19, 432],
+			"dimensions": [202, 253]
+		},
+		{
+			"name": "Scotland",
+			"coords": [215, 70],
+			"dimensions": [211, 348]
+		},
+		{
+			"name": "North East",
+			"coords": [380, 324],
+			"dimensions": [93, 112]
+		},
+		{
+			"name": "North",
+			"coords": [337, 370],
+			"dimensions": [70, 99]
+		},
+		{
+			"name": "West",
+			"coords": [363, 468],
+			"dimensions": [54, 95]
+		},
+		{
+			"name": "Yorkshire",
+			"coords": [388, 428],
+			"dimensions": [129, 89]
+		},
+		{
+			"name": "East Midlands",
+			"coords": [413, 501],
+			"dimensions": [115, 142]
+		},
+		{
+			"name": "West Midlands",
+			"coords": [353, 543],
+			"dimensions": [104, 113]
+		},
+		{
+			"name": "Wales",
+			"coords": [256, 525],
+			"dimensions": [120, 160]
+		},
+		{
+			"name": "East Anglia",
+			"coords": [489, 558],
+			"dimensions": [107, 117]
+		},
+		{
+			"name": "Home Counties",
+			"coords": [431, 605],
+			"dimensions": [94, 83]
+		},
+		{
+			"name": "South East",
+			"coords": [416, 661],
+			"dimensions": [164, 74]
+		},
+		{
+			"name": "South West",
+			"coords": [326, 640],
+			"dimensions": [114, 111]
+		},
+		{
+			"name": "West Country",
+			"coords": [235, 696],
+			"dimensions": [130, 95]
+		}
+	]
+}
