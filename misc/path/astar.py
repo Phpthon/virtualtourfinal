@@ -63,10 +63,10 @@ class AStar(object):
 		elif isinstance(obstacle, pygame.sprite.Sprite):
 			self.obstacles.append(obstacle.rect)
 
-	def check_collision(self, node):
+	def check_collision(self, node, world):
 		rect = self.object_rect.copy()
 		rect.center = (node.xpos, node.ypos)
-		for obstacle in self.obstacles:
+		for obstacle in world.obstacles:
 			if rect.colliderect(obstacle):
 				return True
 		return False
@@ -74,10 +74,10 @@ class AStar(object):
 	def heuristic(self, node, end):
 		return abs(end.x - node.x) + abs(end.y - node.y)
 
-	def search_thread(self, start, end, object_rect, q):
-		q.put(self.search(start, end, object_rect))
+	def search_thread(self, start, end, object_rect, world, q):
+		q.put(self.search(start, end, object_rect, world))
 
-	def search(self, start, end, object_rect):
+	def search(self, start, end, object_rect, world):
 		self.object_rect = object_rect
 		openset = set()
 		closedset = set()
@@ -102,7 +102,9 @@ class AStar(object):
 			for node in self.graph[current]:
 				# if the node is in the closed set or the node is an obstacle
 				# then don't process the current node
-				if node in closedset or self.check_collision(node):
+				# collision checker if statement
+				#if node in closedset or self.check_collision(node, world):
+				if node in closedset:
 					continue
 				# if the node exists in the openset
 				if node in openset:

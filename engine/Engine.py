@@ -16,7 +16,7 @@ class GameEngine(IEventHandler, object):
 		self.display = None
 		self.level = None
 		self.changinglevels = False
-		self.fps = 120
+		self.fps = 60
 		self.clock = pygame.time.Clock()
 		self.ticktime = self.clock.tick(self.fps)
 		self.update_timer = 0

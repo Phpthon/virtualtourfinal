@@ -6,7 +6,7 @@ from event.Events import *
 
 # holds information about a landmark
 class Landmark(object):
-	def __init__(self, **landmark):
+	def __init__(self, landmark):
 		self.name = landmark["name"]
 		self.rect = pygame.Rect(landmark["coords"][0], landmark["coords"][1], landmark["dimensions"][0], landmark["dimensions"][1])
 
@@ -19,6 +19,88 @@ class Entity(object):
 	@abstractmethod
 	def update(self, time, events):
 		raise NotImplementedError("Subclasses must implement the abstract method")
+
+class RemovableEntity(Entity, pygame.sprite.Sprite):
+
+	def __init__(self):
+		Entity.__init__(self)
+		pygame.sprite.Sprite.__init__(self)
+
+class ScoreIndicator(RemovableEntity):
+
+	def __init__(self, parent, x, y, score):
+		RemovableEntity.__init__(self)
+		self.parent = parent
+		# put the treasure at a random position on the map
+		self.x, self.y = x, y
+		# get the image path from the json settings and load it
+		self.font = pygame.font.SysFont(MAIN_FONT, 16)
+
+		self.image = self.font.render(str(score), 0, (34, 49, 63))
+		self.rect = pygame.Rect(self.x, self.y, self.image.get_rect().width, self.image.get_rect().height)
+
+		# move the text 30 pixels
+		self.movement = 30
+		# the initial alpha value
+		self.current_alpha = 0
+
+		self.timer = 0
+		self.remove = False
+
+	def update(self, timer, events):
+
+		self.previous_rect = self.rect.copy()
+
+		self.timer += timer
+		if self.timer > 1:
+			# remove the object from the list on the next cycle
+			self.remove = True
+			return
+
+		self.rect.y = self.y - (self.timer * self.movement)
+		self.current_alpha = int(255 - (self.timer * 255))
+
+		self.image.set_alpha(self.current_alpha)
+
+		self.parent.blit(self.image, self.rect)
+
+class ScoreRemoveIndicator(RemovableEntity):
+
+	def __init__(self, parent, x, y, score):
+		RemovableEntity.__init__(self)
+		self.parent = parent
+		# put the treasure at a random position on the map
+		self.x, self.y = x, y
+		# get the image path from the json settings and load it
+		self.font = pygame.font.SysFont(MAIN_FONT, 16)
+
+		self.image = self.font.render(" - " + str(score), 0, (255, 0, 0))
+		self.rect = pygame.Rect(self.x, self.y, self.image.get_rect().width, self.image.get_rect().height)
+
+		# move the text 30 pixels
+		self.movement = 30
+		# the initial alpha value
+		self.current_alpha = 0
+
+		self.timer = 0
+		self.remove = False
+
+	def update(self, timer, events):
+
+		self.previous_rect = self.rect.copy()
+
+		self.timer += timer
+		if self.timer > 1:
+			# remove the object from the list on the next cycle
+			self.remove = True
+			return
+
+		self.rect.y = self.y - (self.timer * self.movement)
+		self.current_alpha = int(255 - (self.timer * 255))
+
+		self.image.set_alpha(self.current_alpha)
+
+		self.parent.blit(self.image, self.rect)
 
 # treasure class extending entity and sprite class within the pygame library
 # holds information about any given treasure on the map
@@ -34,7 +116,8 @@ class Treasure(Entity, pygame.sprite.Sprite):
 		self.image = pygame.image.load(json_settings["treasure_img"])
 		self.rect = pygame.Rect(self.x, self.y, self.image.get_rect().width, self.image.get_rect().height)
 
-		self.score = 100
+		self.score = random.randint(50, 150)
+
 
 	def update(self, timer, events):
 		# draw the current treasure if the user has opted to display treasures
@@ -63,6 +146,7 @@ class Cloud(Entity, pygame.sprite.Sprite):
 		self.current_image = 0
 		self.image = self.sprites[self.current_image]
 		self.previous_rect = self.rect.copy()
+		self.in_collision = False
 
 	def update(self, time, events):
 		self.previous_rect = self.rect.copy()
@@ -147,7 +231,7 @@ class Robot(Entity, pygame.sprite.Sprite, IEventHandler):
 		if start[0] > end[0] and start[1] < end[1]:
 			self.xg, self.yg = False, True
 			self.bearing = 180.0 + degrees( math.atan( (float(abs(start[0] - end[0]))) / float(abs(start[1] - end[1])) ) )
-			
+
 		if start[0] < end[0] and start[1] < end[1]:
 			self.xg, self.yg = True, True
 			self.bearing = 180.0 - degrees( math.atan( (float(abs(start[0] - end[0]))) / float(abs(start[1] - end[1])) ) )
@@ -239,7 +323,7 @@ class RobotAI(Robot):
 				if len(self.parent.treasures) > 0 and self.pathdone:
 					self.pathdone = False
 					treasure = self.parent.treasures[random.randint(0, len(self.parent.treasures)-1)]
-					self.paththread = threading.Thread(target=self.parent.astar.search_thread, args=(self.parent.nodegraph.find_closest_node(self.rect.center[0], self.rect.center[1]), self.parent.nodegraph.find_closest_node(treasure.rect.center[0], treasure.rect.center[1]), self.rect, self.threadqueue))
+					self.paththread = threading.Thread(target=self.parent.astar.search_thread, args=(self.parent.nodegraph.find_closest_node(self.rect.center[0], self.rect.center[1]), self.parent.nodegraph.find_closest_node(treasure.rect.center[0], treasure.rect.center[1]), self.rect, self.parent, self.threadqueue))
 					self.paththread.start()
 					self.treasure = treasure
 		# check the queue to see if any of the paths have been found

@@ -3,9 +3,6 @@ from gui.Components import *
 
 class Gui(pygame.Surface):
 
-	# the main background color
-	BACKGROUND = (242, 242, 242)
-
 	def __init__(self, parent, size=(100, 100), offset=(0, 0), background=(242, 242, 242), **kwargs):
 		pygame.Surface.__init__(self, size, **kwargs)
 		self.components = []
@@ -37,6 +34,19 @@ class Gui(pygame.Surface):
 
 	def add_component(self, component):
 		self.components.append(component)
+
+	def remove_component(self, component):
+		if not component:
+			return
+		# update the region of the removed component
+		self.parent.blit(self.initial_image.subsurface(component.rect).copy(), component.event_rect)
+		self.components.remove(component)
+
+	def get_component(self, name):
+		for component in self.components:
+			if component.name == name:
+				return component
+		return False
 
 	def update(self, timer, events):
 		for component in self.components:

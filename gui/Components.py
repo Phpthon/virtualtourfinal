@@ -28,7 +28,7 @@ class Component(pygame.Surface, IEventHandler):
 	@abstractmethod
 	def update(self, time, events):
 		raise NotImplementedError("Subclasses must implement the abstract method")
-		
+
 class Button(Component):
 
 	icons = pygame.image.load("assets/img/button_icon_sprites.png")
@@ -58,7 +58,6 @@ class Button(Component):
 		self.offset = (6, 4)
 
 		self.font = pygame.font.Font(FONT_REGULAR, 12)
-
 
 	def update(self, timer, events):
 		update = False
@@ -105,7 +104,7 @@ class Button(Component):
 				fontimg = self.font.render(self.text.upper(), True, (125, 125, 125))
 				self.blit(fontimg, (30, 8))
 				
-			self.parent.blit(self, self.rect)
+			#self.parent.blit(self, self.rect)
 			return True
 		return False
 
@@ -161,10 +160,10 @@ class CheckBox(Component):
 				self.blit(self.tick, (2,0))
 			self.blit(self.font, (26, 3))
 
-			self.parent.blit(self, self.rect)
+			#self.parent.blit(self, self.rect)
 			return True
 		return False
-	
+
 class Title(Component):
 
 	sprites = pygame.image.load("assets/img/title_sprites.png")
@@ -182,11 +181,11 @@ class Title(Component):
 			self.blit(self.sprite, (10, 10))
 			self.blit(self.font, (40, 13))
 			pygame.draw.line(self, (212, 212, 212), (0, self.rect.height-1), (self.rect.width, self.rect.height-1))
-			self.parent.blit(self, self.rect)
+			#self.parent.blit(self, self.rect)
 
 			return True
 		return False
-	
+
 class OrangeLabel(Component, IEventHandler):
 
 	def __init__(self, title, value, parent, size=(210, 16), **kwargs):
@@ -216,7 +215,6 @@ class OrangeLabel(Component, IEventHandler):
 		if event.istype(LabelChange) and event.name == self.name:
 			self.value = self.font.render(event.string, True, (228, 174, 46))
 			self.init = False
-
 
 class Slider(Component):
 
@@ -362,6 +360,7 @@ class Slider(Component):
 	def myround(self, x, base=5):
 		return int(base * math.ceil(float(x)/base))
 
+
 class FlashingLabel(Component, IEventHandler):
 
 	def __init__(self, title, parent, **kwargs):
@@ -399,7 +398,7 @@ class FlashingLabel(Component, IEventHandler):
 		return True
 
 	def event_handler(self, event):
-		if event.istype(LabelChange) and event.name is self.name:
+		if event.istype(LabelChange) and event.name == self.name:
 			self.value = self.font.render(event.string, True, (228, 174, 46))
 			self.init = False
 
@@ -505,8 +504,15 @@ class TrafficLight(Component):
 		if not self.init:
 			self.init = True
 			self.blit(self.parent.initial_image.subsurface(self.rect).copy(), (0,0))
-		self.blit(self.bg, self.bg.get_rect())
-		
+		self.blit(self.bg.copy(), self.bg.get_rect())
+
+		#pygame.draw.circle(self, (255, 255, 255), (0,0), 50)
+
+		self.red.set_alpha(self.current)
+		self.yellow.set_alpha(self.current)
+		self.green.set_alpha(self.current)
+
+		'''
 		if self.timer < 10:
 			if 1 < self.timer > 2:
 				self.blit(self.red, (13, 15))
@@ -531,3 +537,4 @@ class TrafficLight(Component):
 				EventDispatcher().send_event(LightChangeEvent(2))
 				self.timer = random.randint(-10, 0)
 		return True
+		'''
