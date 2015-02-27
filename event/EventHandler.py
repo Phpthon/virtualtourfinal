@@ -20,6 +20,13 @@ class EventDispatcher(object):
 		for device in self.device_list:
 			device.event_handler(event)
 
+	def deregister_events(self):
+		for device in self.device_list:
+			if not device.solid:
+				self.device_list.remove(device)
+
+	def deregister_event(self, device):
+		self.device_list.remove(device)
 
 class IEventHandler(object):
 
@@ -30,8 +37,9 @@ class IEventHandler(object):
 		# abstract method to be implemented in all derived classes
 		pass
 
-	def __init__(self):
+	def __init__(self, solid=False):
 		# create the next handler and register the new handler
+		self.solid = solid
 		EventDispatcher().register_handler(self)
 
 	def send_event(self, event):

@@ -10,7 +10,7 @@ import time
 class GameEngine(IEventHandler, object):
 
 	def __init__(self):
-		IEventHandler.__init__(self)
+		IEventHandler.__init__(self, solid=True)
 		pygame.init()
 		pygame.display.set_caption(json_settings["title"])
 		self.display = None
@@ -74,7 +74,9 @@ class GameEngine(IEventHandler, object):
 			self.paused = False
 			self.pause_menu.init = False
 		if event.istype(LevelChangeEvent) and event.level is LEVEL_MAIN_MENU:
+			EventDispatcher().deregister_events()
 			self.change_level(MainMenu())
 		if event.istype(LevelChangeEvent) and event.level is LEVEL_GAME:
+			EventDispatcher().deregister_events()
 			self.change_level(GameLevel())
 

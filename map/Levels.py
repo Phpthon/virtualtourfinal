@@ -99,15 +99,16 @@ class GameLevel(Level, IEventHandler):
 		self.gui.add_component(component)
 
 
-		component = Button("Remove", 1, self.gui, offset=(60, 300))
-		component.name = "buttonremove"
+		component = TreasureSelector(self.gui, offset=(30, 280))
+		component.name = "treasureselector"
 		self.gui.add_component(component)
 
 
-		component = Button("Below", 1, self.gui, offset=(60, 340))
-		component.name = "removethisbutton"
+		component = Slider("Sort Speed", self.gui, offset=(25, 420), increment=1.0, minvalue=0.0, maxvalue=25.0)
+		component.name = "treasurevelocitychange"
 		self.gui.add_component(component)
-
+		
+		#treasurevelocitychange
 
 		component = Title("General Settings", self.gui, 2, offset=(25, 475))
 		self.gui.add_component(component)
@@ -124,7 +125,19 @@ class GameLevel(Level, IEventHandler):
 		component.name = "menu"
 		self.gui.add_component(component)
 
-		component = CheckBox("Display Treasures", self.gui, offset=(25, 675))
+		component = Button("Reset Trap", 4, self.gui, offset=(60, 620))
+		component.name = "trapreset"
+		self.gui.add_component(component)
+
+		component = CheckBox("Sort Descending", self.gui, offset=(25, 660))
+		component.name = "sortdescending"
+		self.gui.add_component(component)
+
+		component = CheckBox("Display Traps", self.gui, offset=(25, 680))
+		component.name = "displaytraps"
+		self.gui.add_component(component)
+
+		component = CheckBox("Display Treasures", self.gui, offset=(25, 700))
 		component.name = "displaytreasure"
 		self.gui.add_component(component)
 
@@ -136,6 +149,11 @@ class GameLevel(Level, IEventHandler):
 		component.name = "fps"
 		self.gui.add_component(component)
 
+		# add pause button to component array at end due to updating issues
+		component = Button("Pause Ro...", 3, self.gui, offset=(60, 590))
+		component.name = "pauserobot"
+		self.gui.add_component(component)
+
 	def update(self, time, events):
 		self.gui.update(time, events)
 		self.game.update(time, events)
@@ -144,11 +162,28 @@ class GameLevel(Level, IEventHandler):
 		#self.gui1.update(time, events)
 
 	def event_handler(self, event):
-		if event.istype(ButtonClickEvent) and event.name == "buttonremove":
-			print("remove the button")
-			self.gui.remove_component(self.gui.get_component("removethisbutton"))
-			pass
-			# remove some component
+		if event.istype(ButtonClickEvent) and event.name == "pauserobot":
+			self.gui.remove_component(self.gui.get_component("pauserobot"))
+
+			component = Button("Resume Ro...", 2, self.gui, offset=(60, 590))
+			component.name = "resumerobot"
+			self.gui.add_component(component)
+
+			for entity in self.game.known_entities:
+				if isinstance(entity, Robot):
+					entity.velocity = 0
+
+		if event.istype(ButtonClickEvent) and event.name == "resumerobot":
+			self.gui.remove_component(self.gui.get_component("resumerobot"))
+
+			component = Button("Pause Ro...", 3, self.gui, offset=(60, 590))
+			component.name = "pauserobot"
+			self.gui.add_component(component)
+
+			for entity in self.game.known_entities:
+				if isinstance(entity, Robot):
+					entity.velocity = entity.previous_velocity
+
 
 class GameSurface(Level, IEventHandler):
 
@@ -165,6 +200,7 @@ class GameSurface(Level, IEventHandler):
 		self.blit(self.mapimg, self.rect)
 		self.landmarks = []
 		self.display_treasures = False
+		self.display_traps = False
 		for landmark in json_settings["landmarks"]:
 			self.landmarks.append(Landmark(landmark))
 
@@ -205,33 +241,13 @@ class GameSurface(Level, IEventHandler):
 		
 		self.update_timer += time
 
-		# do some updates to the gui
-		if self.update_timer > 0.25:
-			self.update_timer = 0
-			for robot in self.robots:
-				EventDispatcher().send_event(LabelChange("bearing"+robot.type, str(robot.bearing)))
-				EventDispatcher().send_event(LabelChange("position"+robot.type, "(" + str(robot.rect.center[0]) + ", " + str(robot.rect.center[1]) + ")"))
-
-				points = pygame.sprite.spritecollide(robot, self.landmarks, False)
-				if len(points) > 0:
-					loc = ""
-					for landmark in points:
-						loc += landmark.name + "/"
-					EventDispatcher().send_event(LabelChange("location"+robot.type, loc))
-
-				else:
-					EventDispatcher().send_event(LabelChange("location"+robot.type, "N/A"))
-
 		for treasure in self.treasures:
 			collision = False
 			for entity in self.known_entities:
 				if isinstance(entity, Robot) and entity.rect.colliderect(treasure.rect):
 					collision = True
 					self.blit(self.mapimg.subsurface(treasure.rect.x, treasure.rect.y, treasure.rect.width, treasure.rect.height), treasure.rect)
-					
 					entity.score += treasure.score
-					EventDispatcher().send_event(LabelChange(str("score"+entity.type), str(entity.score)))
-
 					# do something with the score thing
 					indicator = ScoreIndicator(self, entity.x, entity.y, treasure.score)
 					self.known_entities.append(indicator)
@@ -262,7 +278,26 @@ class GameSurface(Level, IEventHandler):
 
 		# remove all of the unrequried entities from the list of know entities
 		for entity in removable_entities:
-			self.known_entities.pop(entity)
+			if entity < len(self.known_entities):
+				self.known_entities.pop(entity)
+
+		# do some updates to the gui
+		if self.update_timer > 0.25:
+			self.update_timer = 0
+			for robot in self.robots:
+				EventDispatcher().send_event(LabelChange("bearing"+robot.type, str(robot.bearing)))
+				EventDispatcher().send_event(LabelChange("position"+robot.type, "(" + str(robot.rect.center[0]) + ", " + str(robot.rect.center[1]) + ")"))
+				EventDispatcher().send_event(LabelChange(str("score"+robot.type), str(robot.score)))
+
+				points = pygame.sprite.spritecollide(robot, self.landmarks, False)
+				if len(points) > 0:
+					loc = ""
+					for landmark in points:
+						loc += landmark.name + "/"
+					EventDispatcher().send_event(LabelChange("location"+robot.type, loc))
+
+				else:
+					EventDispatcher().send_event(LabelChange("location"+robot.type, "N/A"))
 
 		#self.parent.blit(self, self.rect)
 
@@ -303,6 +338,11 @@ class GameSurface(Level, IEventHandler):
 			
 		if event.istype(CheckBoxEvent) and event.name == "displaytreasure":
 			self.display_treasures = event.checked
+		if event.istype(CheckBoxEvent) and event.name == "displaytraps":
+			self.display_traps = event.checked
+		if event.istype(ButtonClickEvent) and event.name == "trapreset":
+			for obstacle in self.obstacles:
+				obstacle.change_position()
 
 class PauseMenu(Level):
 

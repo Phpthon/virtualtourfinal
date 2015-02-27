@@ -149,6 +149,9 @@ class Cloud(Entity, pygame.sprite.Sprite):
 		self.in_collision = False
 
 	def update(self, time, events):
+		if not self.parent.display_traps:
+			return
+
 		self.previous_rect = self.rect.copy()
 		self.timer += time
 
@@ -164,10 +167,14 @@ class Cloud(Entity, pygame.sprite.Sprite):
 					self.current_image = rand
 					gen = True
 			self.image = self.sprites[self.current_image]
+
 		self.parent.blit(self.image, self.rect)
 
 	def generate_flash_period(self):
 		self.flash_period = random.uniform(0.5, 1)
+
+	def change_position(self):
+		self.rect = self.sprites[0].get_rect(center=(random.randint(100, self.parent.rect.width - 100), random.randint(100, self.parent.rect.height - 100)))
 
 
 class Robot(Entity, pygame.sprite.Sprite, IEventHandler):

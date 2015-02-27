@@ -44,8 +44,6 @@ class Button(Component):
 		self.text = text
 		self.size = (100, 25)
 
-		self.counter = 0
-
 		self.states = [Button.background.subsurface((0, 0, 100, 25)),
 						Button.background.subsurface((0, 25, 100, 25)),
 						Button.background.subsurface((0, 50, 100, 25))]
@@ -74,8 +72,7 @@ class Button(Component):
 			if event.type == pygame.MOUSEBUTTONDOWN:
 				if self.event_rect.collidepoint(event.pos):
 					if not self.clicked:
-						self.counter += 1
-						EventDispatcher().send_event(ButtonClickEvent(self.name, str(self.counter)))
+						EventDispatcher().send_event(ButtonClickEvent(self.name))
 					self.clicked = True
 					update = True
 			if event.type == pygame.MOUSEBUTTONUP:
@@ -538,3 +535,173 @@ class TrafficLight(Component):
 				self.timer = random.randint(-10, 0)
 		return True
 		'''
+
+class TempTreasure(pygame.sprite.Sprite):
+
+	def __init__(self, score):
+		pygame.sprite.Sprite.__init__(self)
+		self.image = None
+		self.rect = None
+		self.x, self.y = 0.0, 0.0
+		self.score = score
+		self.target = None
+		self.velocity = [1, 1]
+
+	def set_rect(self, rect):
+		self.rect = rect
+		self.x, self.y = rect.x, rect.y
+
+	def set_target(self, target):
+		self.target = target.rect.copy()
+		if self.rect.x > target.rect.x:
+			self.velocity[0] = -1
+		elif self.rect.x < target.rect.x:
+			self.velocity[0] = 1
+		else:
+			self.velocity[0] = 0
+
+		if self.rect.y > target.rect.y:
+			self.velocity[1] = -1
+		elif self.rect.y < target.rect.y:
+			self.velocity[1] = 1
+		else:
+			self.velocity[1] = 0
+
+	def at_target_x(self):
+		if self.rect.x == self.target.x or (self.rect.x > self.target.x and self.velocity[0] == 1) or (self.rect.x < self.target.x and self.velocity[0] == -1):
+			self.rect.x = self.target.x
+			self.x = self.rect.x
+			return True
+		return False
+
+	def at_target_y(self):
+		if self.rect.y == self.target.y or (self.rect.y > self.target.y and self.velocity[1] == 1) or (self.rect.y < self.target.y and self.velocity[1] == -1):
+			self.rect.y = self.target.y
+			self.y = self.rect.y
+			return True
+		return False
+
+	def move(self, velocity):
+		if self.target is not None:
+			t_x, t_y = self.at_target_x(), self.at_target_y()
+			if t_x and t_y:
+				self.target = None
+				return False
+			if not t_x:
+				self.x += velocity * self.velocity[0]
+				self.rect.x = self.x
+			if not t_y:
+				self.y += velocity * self.velocity[1]
+				self.rect.y = self.y
+		return True
+
+class TreasureSelector(Component, IEventHandler):
+
+	def __init__(self, parent, **kwargs):
+		Component.__init__(self, (202, 135), parent, **kwargs)
+		IEventHandler.__init__(self)
+		self.init = False
+		#self.treasures = [TempTreasure(50), TempTreasure(1023), TempTreasure(122), TempTreasure(938), TempTreasure(234), TempTreasure(34)]
+		self.treasures = []
+
+		for i in range(0, 6):
+			self.treasures.append(TempTreasure(random.randint(50, 1500)))
+
+		testfont = pygame.font.SysFont(FONT_REGULAR, 16)
+
+		for i in range(0, len(self.treasures)):
+			#surface = pygame.Surface((50, 50))
+			surface = pygame.image.load("assets/img/treasure_bg.png")
+
+			#surface.fill((212, 212, 212))
+			font_rendered = testfont.render(str(self.treasures[i].score), 1, (0, 0, 0))
+			surface.blit(font_rendered, ((surface.get_rect().width/2)-(font_rendered.get_rect().width/2), (surface.get_rect().height/2)-(font_rendered.get_rect().height/2)))
+			self.treasures[i].image = surface
+			if i < 3:
+				self.treasures[i].set_rect(pygame.Rect(13 + (i*13) + (i*50), 15, 50, 50))
+			else:
+				self.treasures[i].set_rect(pygame.Rect(13 + ((i-3)*13) + ((i-3)*50), 70, 50, 50))
+
+		self.swapping = False
+
+		self.current_index = 0
+		self.sort_encountered = False
+
+		self.unsorted = True
+
+		self.final_blit = False
+
+		self.velocity = 0
+		self.ascending = True
+
+	def update(self, timer, events):
+
+		if not self.unsorted and self.final_blit:
+			return False
+
+		if self.current_index == len(self.treasures) - 2:
+			self.current_index = 0
+			self.sort_encountered = False
+
+		self.fill((232, 232, 232))
+
+		swap_status = False
+		blit_order = []
+		for i in range(0, len(self.treasures)):
+			if self.treasures[i].target is None:
+				if self.unsorted:
+					self.treasures[i].image.set_alpha(100)
+				else:
+					self.treasures[i].image.set_alpha(255)
+
+				#self.blit(self.treasures[i].image, self.treasures[i].rect)
+				blit_order.insert(0, self.treasures[i])
+			else:
+				# do something with the target
+				self.treasures[i].image.set_alpha(255)
+				self.treasures[i].move(self.velocity)
+				#self.blit(self.treasures[i].image, self.treasures[i].rect)
+				swap_status = True
+				blit_order.append(self.treasures[i])
+
+		self.swapping = swap_status
+
+		for item in blit_order:
+			self.blit(item.image, item.rect)
+
+		# do some bubble magic
+		# if not sorted and not swapping
+		if self.unsorted and not self.swapping:
+			index = self.current_index
+			for i in range(index, len(self.treasures) - 1):
+				if self.sort_encountered:
+					self.unsorted = True
+				else:
+					self.unsorted = False
+				self.current_index = i
+				if (self.treasures[i].score > self.treasures[i + 1].score) == self.ascending:
+					self.treasures[i].set_target(self.treasures[i + 1])
+					self.treasures[i + 1].set_target(self.treasures[i])
+
+					hold = self.treasures[i + 1]
+					self.treasures[i + 1] = self.treasures[i]
+					self.treasures[i] = hold
+
+					self.unsorted = True
+					self.swapping = True
+					self.sort_encountered = True
+					break
+
+		if not self.unsorted and self.final_blit:
+			self.final_blit = False
+		else:
+			self.final_blit = True
+
+		return True
+
+	def event_handler(self, event):
+		if event.istype(SliderEvent) and event.name == "treasurevelocitychange":
+			self.velocity = event.slidervalue
+		if event.istype(CheckBoxEvent) and event.name == "sortdescending":
+			self.unsorted = True
+			self.ascending = not event.checked

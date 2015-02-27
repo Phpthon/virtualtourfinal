@@ -15,9 +15,8 @@ class MouseEvent(Event):
 		Event.__init__(self)
 
 class ButtonClickEvent(Event):
-	def __init__(self, name, text):
+	def __init__(self, name):
 		Event.__init__(self, name)
-		self.text = text
 
 class CheckBoxEvent(Event):
 	def __init__(self, name, checked):

@@ -38,6 +38,9 @@ class Gui(pygame.Surface):
 	def remove_component(self, component):
 		if not component:
 			return
+		# deregister handler if the component was a handler
+		if isinstance(component, IEventHandler):
+			EventDispatcher().deregister_event(component)
 		# update the region of the removed component
 		self.parent.blit(self.initial_image.subsurface(component.rect).copy(), component.event_rect)
 		self.components.remove(component)
