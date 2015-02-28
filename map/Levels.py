@@ -260,7 +260,7 @@ class GameSurface(Level, IEventHandler):
 		removable_entities = []
 		for i in range(0, len(self.known_entities)):
 			self.known_entities[i].update(time, events)
-			if isinstance(self.known_entities[i], RemovableEntity) and self.known_entities[i].remove:
+			if self.known_entities[i].remove:
 				removable_entities.append(i)
 			if isinstance(self.known_entities[i], Robot):
 				for obstacle in self.obstacles:
@@ -341,6 +341,10 @@ class GameSurface(Level, IEventHandler):
 		if event.istype(CheckBoxEvent) and event.name == "displaytraps":
 			self.display_traps = event.checked
 		if event.istype(ButtonClickEvent) and event.name == "trapreset":
+			# do something with flashing indicator
+			indicator = FlashingIndicator(self, y=0, text="Something went wrong, please try again", duration=2)
+			self.known_entities.append(indicator)
+
 			for obstacle in self.obstacles:
 				obstacle.change_position()
 

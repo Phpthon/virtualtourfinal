@@ -15,6 +15,9 @@ class Entity(object):
 
 	__metaclass__ = ABCMeta
 
+	def __init__(self):
+		self.remove = False
+
 	# abstractmethod - must be implemented in all subclasses
 	@abstractmethod
 	def update(self, time, events):
@@ -102,11 +105,62 @@ class ScoreRemoveIndicator(RemovableEntity):
 
 		self.parent.blit(self.image, self.rect)
 
+
+class FlashingIndicator(RemovableEntity):
+
+	def __init__(self, parent, y=0, text="null", duration=5):
+		RemovableEntity.__init__(self)
+		self.parent = parent
+		# put the treasure at a random position on the map
+
+		font = pygame.font.SysFont(MAIN_FONT, 12)
+		surface = font.render(text, 1, (255, 51, 51))
+
+		mainsurface = pygame.Surface((surface.get_rect().width + 50, surface.get_rect().height + 10))
+		mainsurface.fill((242, 242, 242))
+
+		mainsurface.blit(surface, ((mainsurface.get_rect().width/2) - (surface.get_rect().width/2), (mainsurface.get_rect().height/2) - (surface.get_rect().height/2)))
+		self.rect = pygame.Rect((parent.rect.width/2) - (mainsurface.get_rect().width/2), (parent.rect.height/2) - (mainsurface.get_rect().height/2), mainsurface.get_rect().width, mainsurface.get_rect().height)
+		self.previous_rect = self.rect.copy()
+
+		self.image = mainsurface
+		self.duration = duration
+
+		self.timer = 0
+		self.remove = False
+
+		self.amount = 510
+		self.direction = -1
+		self.current = 150
+
+	def update(self, timer, events):
+
+		self.timer += timer
+		if self.timer > self.duration:
+			# remove the object from the list on the next cycle
+			self.remove = True
+			return
+
+		self.previous_rect = self.rect.copy()
+
+		self.current += timer * self.direction * self.amount
+
+		if self.current > 255:
+			self.direction = -1
+			self.current = 255
+		elif self.current < 150:
+			self.direction = 1
+			self.current = 150
+
+		self.image.set_alpha(math.ceil(self.current))
+		self.parent.blit(self.image, self.rect)
+
 # treasure class extending entity and sprite class within the pygame library
 # holds information about any given treasure on the map
 class Treasure(Entity, pygame.sprite.Sprite):
 
 	def __init__(self, parent):
+		Entity.__init__(self)
 		pygame.sprite.Sprite.__init__(self)
 		self.parent = parent
 		# put the treasure at a random position on the map
@@ -131,6 +185,7 @@ class Cloud(Entity, pygame.sprite.Sprite):
 	sprites = None
 
 	def __init__(self, parent):
+		Entity.__init__(self)
 		pygame.sprite.Sprite.__init__(self)
 		# load the cloud sprites into a static variable for reuse
 		if Cloud.sprites == None:
@@ -180,6 +235,7 @@ class Cloud(Entity, pygame.sprite.Sprite):
 class Robot(Entity, pygame.sprite.Sprite, IEventHandler):
 
 	def __init__(self, parent, x=150, y=150):
+		Entity.__init__(self)
 		pygame.sprite.Sprite.__init__(self)
 		IEventHandler.__init__(self)
 

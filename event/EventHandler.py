@@ -26,7 +26,8 @@ class EventDispatcher(object):
 				self.device_list.remove(device)
 
 	def deregister_event(self, device):
-		self.device_list.remove(device)
+		if device in self.device_list:
+			self.device_list.remove(device)
 
 class IEventHandler(object):
 
