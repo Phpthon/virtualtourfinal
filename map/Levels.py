@@ -228,58 +228,50 @@ class GameSurface(Level, IEventHandler):
 	def update(self, time, events):
 
 		if len(self.treasures) == 0:
-			for i in range(0, 3):
+			for i in range(0, 5):
 				treasure = Treasure(self)
 				collision = False
-				for object in self.obstacles:
-					if object.rect.colliderect(treasure.rect):
+				for entity in self.known_entities:
+					if (isinstance(entity, Cloud) or isinstance(entity, Treasure)) and entity.rect.colliderect(treasure.rect):
 						collision = True
-				if not collision: self.treasures.append(Treasure(self))
+				if not collision:
+					self.treasures.append(treasure)
+					self.known_entities.append(treasure)
 
 		for entity in self.known_entities:
 			self.blit(self.mapimg.subsurface(entity.previous_rect.x, entity.previous_rect.y, entity.previous_rect.width, entity.previous_rect.height), entity.previous_rect)
-		
+
+		# remove all of the unrequired entities from the list of know entities
+		for entity in self.known_entities:
+			if entity.remove:
+				self.known_entities.remove(entity)
+
 		self.update_timer += time
 
-		for treasure in self.treasures:
-			collision = False
-			for entity in self.known_entities:
-				if isinstance(entity, Robot) and entity.rect.colliderect(treasure.rect):
-					collision = True
-					self.blit(self.mapimg.subsurface(treasure.rect.x, treasure.rect.y, treasure.rect.width, treasure.rect.height), treasure.rect)
-					entity.score += treasure.score
-					# do something with the score thing
-					indicator = ScoreIndicator(self, entity.x, entity.y, treasure.score)
-					self.known_entities.append(indicator)
-					self.treasures.remove(treasure)
-					continue
-			if not collision:
-				self.blit(self.mapimg.subsurface(treasure.rect.x, treasure.rect.y, treasure.rect.width, treasure.rect.height), treasure.rect)
-				treasure.update(time, events)
-
-		removable_entities = []
 		for i in range(0, len(self.known_entities)):
+
 			self.known_entities[i].update(time, events)
-			if self.known_entities[i].remove:
-				removable_entities.append(i)
+
 			if isinstance(self.known_entities[i], Robot):
-				for obstacle in self.obstacles:
-					collide_obstacle = self.known_entities[i].rect.colliderect(obstacle.rect)
-					if collide_obstacle and not obstacle.in_collision:
-						# remove some points from the robot
-						indicator = ScoreRemoveIndicator(self, self.known_entities[i].rect.x, self.known_entities[i].rect.y, 50)
-						self.known_entities.append(indicator)
-						indicator.update(time, events)
-						self.known_entities[i].score -= 50
-						obstacle.in_collision = True
-					elif not collide_obstacle and obstacle.in_collision:
-						obstacle.in_collision = False
 
-
-		# remove all of the unrequried entities from the list of know entities
-		for entity in removable_entities:
-			if entity < len(self.known_entities):
-				self.known_entities.pop(entity)
+				for entity in self.known_entities:
+					if isinstance(entity, Treasure) and not entity.remove:
+						if self.known_entities[i].rect.colliderect(entity.rect):
+							self.known_entities[i].score += entity.score
+							indicator = ScoreIndicator(self, self.known_entities[i].x, self.known_entities[i].y, entity.score)
+							self.known_entities.append(indicator)
+							self.treasures.remove(entity)
+							entity.remove = True
+					if isinstance(entity, Cloud) and not entity.remove:
+						collide_obstacle = self.known_entities[i].rect.colliderect(entity.rect)
+						if collide_obstacle and not entity.in_collision:
+							# remove some points from the robot
+							indicator = ScoreRemoveIndicator(self, self.known_entities[i].rect.x, self.known_entities[i].rect.y, 50)
+							self.known_entities.append(indicator)
+							self.known_entities[i].score -= 50
+							entity.in_collision = True
+						elif not collide_obstacle and entity.in_collision:
+							entity.in_collision = False
 
 		# do some updates to the gui
 		if self.update_timer > 0.25:
@@ -342,8 +334,15 @@ class GameSurface(Level, IEventHandler):
 			self.display_traps = event.checked
 		if event.istype(ButtonClickEvent) and event.name == "trapreset":
 			# do something with flashing indicator
-			indicator = FlashingIndicator(self, y=0, text="Something went wrong, please try again", duration=2)
+			for entity in self.known_entities:
+				if isinstance(entity, FlashingIndicator):
+					entity.remove = True
+
+			text = ["Please click anywhere to place a treasure", "Now use the gui to adjust the value of the treasure"]
+			indicator = FlashingIndicator(self, y=20, text=text[random.randint(0, len(text)-1)], duration=-1, colour=(92, 92, 92))
 			self.known_entities.append(indicator)
+
+
 
 			for obstacle in self.obstacles:
 				obstacle.change_position()

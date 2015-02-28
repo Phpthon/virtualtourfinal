@@ -41,6 +41,7 @@ class ScoreIndicator(RemovableEntity):
 
 		self.image = self.font.render(str(score), 0, (34, 49, 63))
 		self.rect = pygame.Rect(self.x, self.y, self.image.get_rect().width, self.image.get_rect().height)
+		self.previous_rect = self.rect.copy()
 
 		# move the text 30 pixels
 		self.movement = 30
@@ -79,6 +80,7 @@ class ScoreRemoveIndicator(RemovableEntity):
 
 		self.image = self.font.render(" - " + str(score), 0, (255, 0, 0))
 		self.rect = pygame.Rect(self.x, self.y, self.image.get_rect().width, self.image.get_rect().height)
+		self.previous_rect = self.rect.copy()
 
 		# move the text 30 pixels
 		self.movement = 30
@@ -108,19 +110,22 @@ class ScoreRemoveIndicator(RemovableEntity):
 
 class FlashingIndicator(RemovableEntity):
 
-	def __init__(self, parent, y=0, text="null", duration=5):
+	def __init__(self, parent, y=-1, text="null", duration=-1, colour=(255, 51, 51)):
 		RemovableEntity.__init__(self)
 		self.parent = parent
 		# put the treasure at a random position on the map
 
 		font = pygame.font.SysFont(MAIN_FONT, 12)
-		surface = font.render(text, 1, (255, 51, 51))
+		surface = font.render(text, 1, colour)
 
 		mainsurface = pygame.Surface((surface.get_rect().width + 50, surface.get_rect().height + 10))
 		mainsurface.fill((242, 242, 242))
 
 		mainsurface.blit(surface, ((mainsurface.get_rect().width/2) - (surface.get_rect().width/2), (mainsurface.get_rect().height/2) - (surface.get_rect().height/2)))
-		self.rect = pygame.Rect((parent.rect.width/2) - (mainsurface.get_rect().width/2), (parent.rect.height/2) - (mainsurface.get_rect().height/2), mainsurface.get_rect().width, mainsurface.get_rect().height)
+		if y == -1:
+			y = (parent.rect.height/2) - (mainsurface.get_rect().height/2)
+
+		self.rect = pygame.Rect((parent.rect.width/2) - (mainsurface.get_rect().width/2), y, mainsurface.get_rect().width, mainsurface.get_rect().height)
 		self.previous_rect = self.rect.copy()
 
 		self.image = mainsurface
@@ -129,17 +134,21 @@ class FlashingIndicator(RemovableEntity):
 		self.timer = 0
 		self.remove = False
 
-		self.amount = 510
+		self.amount = 255
 		self.direction = -1
 		self.current = 150
 
 	def update(self, timer, events):
 
-		self.timer += timer
-		if self.timer > self.duration:
-			# remove the object from the list on the next cycle
-			self.remove = True
-			return
+		if self.duration != -1:
+			self.timer += timer
+			if self.timer > self.duration:
+				# remove the object from the list on the next cycle
+				self.remove = True
+				return
+		else:
+			if self.remove:
+				return
 
 		self.previous_rect = self.rect.copy()
 
@@ -159,21 +168,42 @@ class FlashingIndicator(RemovableEntity):
 # holds information about any given treasure on the map
 class Treasure(Entity, pygame.sprite.Sprite):
 
+	sprites = None
+
 	def __init__(self, parent):
 		Entity.__init__(self)
 		pygame.sprite.Sprite.__init__(self)
+
+		if Treasure.sprites is None:
+			sprites = pygame.image.load("assets/img/treasure_sprites.png")
+			Treasure.sprites = [sprites.subsurface(0, 0, 32, 32)
+								, sprites.subsurface(32, 0, 32, 32)
+								, sprites.subsurface(64, 0, 32, 32)]
+			self.sprites = Treasure.sprites
+
 		self.parent = parent
 		# put the treasure at a random position on the map
 		self.x = random.randint(50, self.parent.rect.width - 100)
 		self.y = random.randint(50, self.parent.rect.height - 100)
 		# get the image path from the json settings and load it
-		self.image = pygame.image.load(json_settings["treasure_img"])
+		self.image = self.sprites[0]
 		self.rect = pygame.Rect(self.x, self.y, self.image.get_rect().width, self.image.get_rect().height)
+		self.previous_rect = self.rect.copy()
 
-		self.score = random.randint(50, 150)
+		self.score = 0
+		self.set_score(random.randint(0, 990))
 
+	def set_score(self, score):
+		if score < 250:
+			self.image = self.sprites[0]
+		elif score < 500:
+			self.image = self.sprites[1]
+		else:
+			self.image = self.sprites[2]
+		self.score = score
 
 	def update(self, timer, events):
+		self.previous_rect = self.rect.copy()
 		# draw the current treasure if the user has opted to display treasures
 		if self.parent.display_treasures:
 			self.parent.blit(self.image, self.rect)
