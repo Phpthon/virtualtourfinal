@@ -37,3 +37,12 @@ class LightChangeEvent(Event):
 	def __init__(self, status):
 		Event.__init__(self, None)
 		self.status = status
+
+class TreasureCollectEvent(Event):
+	def __init__(self, treasure):
+		Event.__init__(self, None)
+		self.treasure = treasure
+
+class RemoveEvent(Event):
+	def __init__(self, name):
+		Event.__init__(self, name)

@@ -539,16 +539,29 @@ class TrafficLight(Component):
 		return True
 		'''
 
-class TempTreasure(pygame.sprite.Sprite):
+class TreasureSelectorTreasure(pygame.sprite.Sprite):
 
-	def __init__(self, score):
+	def __init__(self, treasure):
 		pygame.sprite.Sprite.__init__(self)
-		self.image = None
+
+		surface = pygame.image.load("assets/img/treasure_bg.png")
+
+		testfont = pygame.font.SysFont(FONT_REGULAR, 14)
+		font_rendered = testfont.render(str(treasure.score), 1, (0, 0, 0))
+		surface.blit(treasure.image, ((surface.get_rect().width/2)-(treasure.image.get_rect().width/2), 3))
+		surface.blit(font_rendered, ((surface.get_rect().width/2)-(font_rendered.get_rect().width/2), (surface.get_rect().height)-(font_rendered.get_rect().height) - 3))
+		self.image = surface
+
 		self.rect = None
 		self.x, self.y = 0.0, 0.0
-		self.score = score
+		self.score = treasure.score
 		self.target = None
 		self.velocity = [1, 1]
+
+	def has_target(self):
+		if self.target is not None:
+			return True
+		return False
 
 	def set_rect(self, rect):
 		self.rect = rect
@@ -606,7 +619,7 @@ class TreasureSelector(Component, IEventHandler):
 		self.init = False
 		#self.treasures = [TempTreasure(50), TempTreasure(1023), TempTreasure(122), TempTreasure(938), TempTreasure(234), TempTreasure(34)]
 		self.treasures = []
-
+		'''
 		for i in range(0, 6):
 			if i == 2 or i == 5 or i == 4:
 				self.treasures.append(TempTreasure(100))
@@ -628,7 +641,7 @@ class TreasureSelector(Component, IEventHandler):
 				self.treasures[i].set_rect(pygame.Rect(13 + (i*13) + (i*50), 15, 50, 50))
 			else:
 				self.treasures[i].set_rect(pygame.Rect(13 + ((i-3)*13) + ((i-3)*50), 70, 50, 50))
-
+		'''
 		self.swapping = False
 
 		self.current_index = 0
@@ -641,13 +654,25 @@ class TreasureSelector(Component, IEventHandler):
 		self.velocity = 0
 		self.ascending = True
 
+	def recalculate_positions(self):
+		for i in range(0, len(self.treasures)):
+			if not self.treasures[i].has_target():
+				if i < 3:
+					self.treasures[i].set_rect(pygame.Rect(13 + (i*13) + (i*50), 15, 50, 50))
+				else:
+					self.treasures[i].set_rect(pygame.Rect(13 + ((i-3)*13) + ((i-3)*50), 70, 50, 50))
+
+		self.unsorted = True
+
 	def update(self, timer, events):
 
 		for event in events:
 			if event.type == pygame.MOUSEBUTTONDOWN:
 				for treasure in self.treasures:
 					if treasure.rect.collidepoint(self.get_position_locally(event.pos)):
-						print("clicked treasure, value: " + str(treasure.score))
+						if not self.swapping:
+							self.treasures.remove(treasure)
+							self.recalculate_positions()
 
 		if not self.unsorted and self.final_blit:
 			return False
@@ -662,18 +687,18 @@ class TreasureSelector(Component, IEventHandler):
 		blit_order = []
 		for i in range(0, len(self.treasures)):
 			if self.treasures[i].target is None:
-				if self.unsorted:
+				'''
+				if self.swapping:
 					self.treasures[i].image.set_alpha(100)
 				else:
 					self.treasures[i].image.set_alpha(255)
+				'''
 
-				#self.blit(self.treasures[i].image, self.treasures[i].rect)
 				blit_order.insert(0, self.treasures[i])
 			else:
 				# do something with the target
 				self.treasures[i].image.set_alpha(255)
 				self.treasures[i].move(self.velocity)
-				#self.blit(self.treasures[i].image, self.treasures[i].rect)
 				swap_status = True
 				blit_order.append(self.treasures[i])
 
@@ -719,3 +744,17 @@ class TreasureSelector(Component, IEventHandler):
 		if event.istype(CheckBoxEvent) and event.name == "sortdescending":
 			self.unsorted = True
 			self.ascending = not event.checked
+		if event.istype(TreasureCollectEvent):
+			if len(self.treasures) < 6:
+				self.treasures.append(TreasureSelectorTreasure(event.treasure))
+				self.recalculate_positions()
+		if event.istype(RemoveEvent) and event.name == "removelasttreasure":
+			self.treasures.pop(len(self.treasures)-1)
+			self.recalculate_positions()
+
+	def remove_last_treasure(self):
+		if len(self.treasures) > 0:
+			treasure = self.treasures.pop(len(self.treasures)-1)
+			self.recalculate_positions()
+			return treasure
+		return False

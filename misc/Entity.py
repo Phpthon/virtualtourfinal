@@ -39,7 +39,7 @@ class ScoreIndicator(RemovableEntity):
 		# get the image path from the json settings and load it
 		self.font = pygame.font.SysFont(MAIN_FONT, 16)
 
-		self.image = self.font.render(str(score), 1, colour)
+		self.image = self.font.render(" + " + str(score), 1, colour)
 		self.rect = pygame.Rect(self.x, self.y, self.image.get_rect().width, self.image.get_rect().height)
 		self.previous_rect = self.rect.copy()
 

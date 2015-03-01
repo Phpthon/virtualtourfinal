@@ -104,7 +104,7 @@ class GameLevel(Level, IEventHandler):
 		self.gui.add_component(component)
 
 
-		component = Slider("Sort Speed", self.gui, offset=(25, 420), increment=1.0, minvalue=0.0, maxvalue=25.0)
+		component = Slider("Sort Speed", self.gui, offset=(25, 420), increment=1.0, minvalue=1.0, maxvalue=25.0)
 		component.name = "treasurevelocitychange"
 		self.gui.add_component(component)
 		
@@ -262,14 +262,22 @@ class GameSurface(Level, IEventHandler):
 							self.known_entities.append(indicator)
 							self.treasures.remove(entity)
 							entity.remove = True
+							EventDispatcher().send_event(TreasureCollectEvent(entity))
 					if isinstance(entity, Cloud) and not entity.remove:
 						collide_obstacle = self.known_entities[i].rect.colliderect(entity.rect)
 						if collide_obstacle and not entity.in_collision:
 							# remove some points from the robot
-							indicator = ScoreRemoveIndicator(self, self.known_entities[i].rect.x, self.known_entities[i].rect.y, 50)
-							self.known_entities.append(indicator)
-							self.known_entities[i].score -= 50
+							treasure = self.parent.gui.get_component("treasureselector").remove_last_treasure()
+							if not treasure:
+								indicator = ScoreRemoveIndicator(self, self.known_entities[i].rect.x, self.known_entities[i].rect.y, "No Treasure!")
+								self.known_entities.append(indicator)
+							else:
+								indicator = ScoreRemoveIndicator(self, self.known_entities[i].rect.x, self.known_entities[i].rect.y, treasure.score)
+								self.known_entities.append(indicator)
+								self.known_entities[i].score -= treasure.score
+
 							entity.in_collision = True
+
 						elif not collide_obstacle and entity.in_collision:
 							entity.in_collision = False
 
@@ -341,8 +349,6 @@ class GameSurface(Level, IEventHandler):
 			text = ["Please click anywhere to place a treasure", "Now use the gui to adjust the value of the treasure"]
 			indicator = FlashingIndicator(self, y=20, text=text[random.randint(0, len(text)-1)], duration=-1, colour=(92, 92, 92))
 			self.known_entities.append(indicator)
-
-
 
 			for obstacle in self.obstacles:
 				obstacle.change_position()
