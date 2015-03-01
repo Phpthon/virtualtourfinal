@@ -31,7 +31,7 @@ class RemovableEntity(Entity, pygame.sprite.Sprite):
 
 class ScoreIndicator(RemovableEntity):
 
-	def __init__(self, parent, x, y, score):
+	def __init__(self, parent, x, y, score, colour=(34, 49, 63)):
 		RemovableEntity.__init__(self)
 		self.parent = parent
 		# put the treasure at a random position on the map
@@ -39,7 +39,7 @@ class ScoreIndicator(RemovableEntity):
 		# get the image path from the json settings and load it
 		self.font = pygame.font.SysFont(MAIN_FONT, 16)
 
-		self.image = self.font.render(str(score), 0, (34, 49, 63))
+		self.image = self.font.render(str(score), 1, colour)
 		self.rect = pygame.Rect(self.x, self.y, self.image.get_rect().width, self.image.get_rect().height)
 		self.previous_rect = self.rect.copy()
 
@@ -62,9 +62,9 @@ class ScoreIndicator(RemovableEntity):
 			return
 
 		self.rect.y = self.y - (self.timer * self.movement)
-		self.current_alpha = int(255 - (self.timer * 255))
+		#self.current_alpha = int(255 - (self.timer * 255))
 
-		self.image.set_alpha(self.current_alpha)
+		#self.image.set_alpha(self.current_alpha)
 
 		self.parent.blit(self.image, self.rect)
 
@@ -78,7 +78,7 @@ class ScoreRemoveIndicator(RemovableEntity):
 		# get the image path from the json settings and load it
 		self.font = pygame.font.SysFont(MAIN_FONT, 16)
 
-		self.image = self.font.render(" - " + str(score), 0, (255, 0, 0))
+		self.image = self.font.render(" - " + str(score), 1, (255, 0, 0))
 		self.rect = pygame.Rect(self.x, self.y, self.image.get_rect().width, self.image.get_rect().height)
 		self.previous_rect = self.rect.copy()
 
@@ -101,9 +101,9 @@ class ScoreRemoveIndicator(RemovableEntity):
 			return
 
 		self.rect.y = self.y - (self.timer * self.movement)
-		self.current_alpha = int(255 - (self.timer * 255))
+		#self.current_alpha = int(255 - (self.timer * 255))
 
-		self.image.set_alpha(self.current_alpha)
+		#self.image.set_alpha(self.current_alpha)
 
 		self.parent.blit(self.image, self.rect)
 
@@ -135,8 +135,10 @@ class FlashingIndicator(RemovableEntity):
 		self.remove = False
 
 		self.amount = 255
-		self.direction = -1
-		self.current = 150
+		self.direction = 1
+		self.current = 50
+
+		self.timer_opaque = 1
 
 	def update(self, timer, events):
 
@@ -152,14 +154,18 @@ class FlashingIndicator(RemovableEntity):
 
 		self.previous_rect = self.rect.copy()
 
+		self.timer_opaque += timer
 		self.current += timer * self.direction * self.amount
 
-		if self.current > 255:
+		if self.timer_opaque < 1:
+			self.current = 255
+		elif self.current > 255:
 			self.direction = -1
 			self.current = 255
-		elif self.current < 150:
+			self.timer_opaque = 0
+		elif self.current < 50:
 			self.direction = 1
-			self.current = 150
+			self.current = 50
 
 		self.image.set_alpha(math.ceil(self.current))
 		self.parent.blit(self.image, self.rect)
@@ -415,10 +421,20 @@ class RobotAI(Robot):
 			if self.paththread == None or not self.paththread.is_alive():
 				if len(self.parent.treasures) > 0 and self.pathdone:
 					self.pathdone = False
-					treasure = self.parent.treasures[random.randint(0, len(self.parent.treasures)-1)]
-					self.paththread = threading.Thread(target=self.parent.astar.search_thread, args=(self.parent.nodegraph.find_closest_node(self.rect.center[0], self.rect.center[1]), self.parent.nodegraph.find_closest_node(treasure.rect.center[0], treasure.rect.center[1]), self.rect, self.parent, self.threadqueue))
-					self.paththread.start()
-					self.treasure = treasure
+					start_node = self.parent.nodegraph.find_closest_node(self.rect.center[0], self.rect.center[1])
+
+					min_treasure = None
+					min_distance = None
+					for treasure in self.parent.treasures:
+						distance = math.hypot(abs(start_node.xpos - treasure.rect.center[0]), abs(start_node.ypos - treasure.rect.center[1]))
+						if min_treasure is None or distance < min_distance:
+							min_treasure = treasure
+							min_distance = distance
+
+					if min_treasure is not None:
+						self.paththread = threading.Thread(target=self.parent.astar.search_thread, args=(start_node, self.parent.nodegraph.find_closest_node(min_treasure.rect.center[0], min_treasure.rect.center[1]), self.rect, self.parent, self.threadqueue))
+						self.paththread.start()
+						self.treasure = treasure
 		# check the queue to see if any of the paths have been found
 		try:
 			new_path = self.threadqueue.get_nowait()

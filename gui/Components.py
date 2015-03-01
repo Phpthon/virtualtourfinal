@@ -19,8 +19,11 @@ class Component(pygame.Surface, IEventHandler):
 
 		self.parent = parent
 		self.event_rect = self.rect.copy()
-		self.event_rect.x, self.event_rect.y = parent.rect.x + offset[0], parent.rect.y + offset[1]
+		self.event_rect.x, self.event_rect.y = parent.rect.x + self.rect.x, parent.rect.y + self.rect.y
 		self.name = name
+
+	def get_position_locally(self, mouse_position):
+		return (mouse_position[0] - self.parent.rect.x - self.rect.x, mouse_position[1] - self.parent.rect.y - self.rect.y)
 
 	__metaclass__ = ABCMeta
 
@@ -635,6 +638,13 @@ class TreasureSelector(Component, IEventHandler):
 		self.ascending = True
 
 	def update(self, timer, events):
+
+		for event in events:
+			if event.type == pygame.MOUSEBUTTONDOWN:
+				print("tesintg")
+				for treasure in self.treasures:
+					if treasure.rect.collidepoint(self.get_position_locally(event.pos)):
+						print("clicked treasure, value: " + str(treasure.score))
 
 		if not self.unsorted and self.final_blit:
 			return False
