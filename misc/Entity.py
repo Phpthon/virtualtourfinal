@@ -138,7 +138,7 @@ class FlashingIndicator(RemovableEntity):
 		self.direction = 1
 		self.current = 50
 
-		self.timer_opaque = 1
+		self.timer_opaque = 0.5
 
 	def update(self, timer, events):
 
@@ -157,7 +157,7 @@ class FlashingIndicator(RemovableEntity):
 		self.timer_opaque += timer
 		self.current += timer * self.direction * self.amount
 
-		if self.timer_opaque < 1:
+		if self.timer_opaque < 0.5:
 			self.current = 255
 		elif self.current > 255:
 			self.direction = -1

@@ -177,7 +177,7 @@ class Title(Component):
 	def update(self, timer, events):
 		if not self.init:
 			self.init = True
-			self.fill(self.parent.background)
+			self.blit(self.parent.initial_image.subsurface(self.rect), (0,0))
 			self.blit(self.sprite, (10, 10))
 			self.blit(self.font, (40, 13))
 			pygame.draw.line(self, (212, 212, 212), (0, self.rect.height-1), (self.rect.width, self.rect.height-1))
@@ -608,6 +608,10 @@ class TreasureSelector(Component, IEventHandler):
 		self.treasures = []
 
 		for i in range(0, 6):
+			if i == 2 or i == 5 or i == 4:
+				self.treasures.append(TempTreasure(100))
+				continue
+
 			self.treasures.append(TempTreasure(random.randint(50, 1500)))
 
 		testfont = pygame.font.SysFont(FONT_REGULAR, 16)
@@ -641,7 +645,6 @@ class TreasureSelector(Component, IEventHandler):
 
 		for event in events:
 			if event.type == pygame.MOUSEBUTTONDOWN:
-				print("tesintg")
 				for treasure in self.treasures:
 					if treasure.rect.collidepoint(self.get_position_locally(event.pos)):
 						print("clicked treasure, value: " + str(treasure.score))
@@ -675,6 +678,7 @@ class TreasureSelector(Component, IEventHandler):
 				blit_order.append(self.treasures[i])
 
 		self.swapping = swap_status
+		#print self.swapping
 
 		for item in blit_order:
 			self.blit(item.image, item.rect)
@@ -689,7 +693,7 @@ class TreasureSelector(Component, IEventHandler):
 				else:
 					self.unsorted = False
 				self.current_index = i
-				if (self.treasures[i].score > self.treasures[i + 1].score) == self.ascending:
+				if (self.treasures[i].score > self.treasures[i + 1].score) == self.ascending and not self.treasures[i].score == self.treasures[i + 1].score:
 					self.treasures[i].set_target(self.treasures[i + 1])
 					self.treasures[i + 1].set_target(self.treasures[i])
 

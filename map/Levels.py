@@ -110,18 +110,18 @@ class GameLevel(Level, IEventHandler):
 		
 		#treasurevelocitychange
 
-		component = Title("General Settings", self.gui, 2, offset=(25, 475))
+		component = Title("General Settings", self.gui, 2, offset=(25, 645))
 		self.gui.add_component(component)
 
-		component = TrafficLight(self.gui, offset=(180, 530))
-		component.name = "light"
-		self.gui.add_component(component)
+		#component = TrafficLight(self.gui, offset=(180, 530))
+		#component.name = "light"
+		#self.gui.add_component(component)
 
-		component = Button("Pause", 3, self.gui, offset=(60, 530))
+		component = Button("Pause", 3, self.gui, offset=(30, 690))
 		component.name = "pause"
 		self.gui.add_component(component)
 
-		component = Button("Menu", 1, self.gui, offset=(60, 560))
+		component = Button("Menu", 1, self.gui, offset=(135, 690))
 		component.name = "menu"
 		self.gui.add_component(component)
 
@@ -129,15 +129,15 @@ class GameLevel(Level, IEventHandler):
 		component.name = "trapreset"
 		self.gui.add_component(component)
 
-		component = CheckBox("Sort Descending", self.gui, offset=(25, 660))
+		component = CheckBox("Sort Descending", self.gui, offset=(25, 475))
 		component.name = "sortdescending"
 		self.gui.add_component(component)
 
-		component = CheckBox("Display Traps", self.gui, offset=(25, 680))
+		component = CheckBox("Display Traps", self.gui, offset=(25, 495))
 		component.name = "displaytraps"
 		self.gui.add_component(component)
 
-		component = CheckBox("Display Treasures", self.gui, offset=(25, 700))
+		component = CheckBox("Display Treasures", self.gui, offset=(25, 515))
 		component.name = "displaytreasure"
 		self.gui.add_component(component)
 
